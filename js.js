@@ -9,6 +9,7 @@ const response = await fetch('https://tlp-ab.ru/bureau/');
 let html = await response.text();
 console.log(html)
 }
+
 a()
 
 
