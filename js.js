@@ -35,6 +35,7 @@ let NAMES = ''
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
+  bot.sendMessage(chatId, '🟢 GET req on server');
 })
 
 app.listen(port, () => {
