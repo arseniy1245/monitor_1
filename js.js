@@ -5,9 +5,10 @@
 
 const express = require('express')
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3333
 const cheerio = require('cheerio');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 const TelegramBot = require('node-telegram-bot-api');
 // const { setInterval } = require('timers/promises');
@@ -47,7 +48,24 @@ app.listen(port, () => {
     setTimeout(st, 120000)
     }
 
+    function keep_alive() {
 
+    }
+   
+    let this_url = 'https://monitor-1-3qxl.onrender.com'
+    let keepAlive_url = 'https://keep-alive-2-t8ru.onrender.com'
+
+    req_keep_alive();
+    function req_keep_alive() {
+        fetch(keepAlive_url,
+            {method:'POST',headers:{"Content-Type":"application/json;charset=utf-8"},
+                body: JSON.stringify({
+                    from: this_url
+                })})
+        .catch(err => console.log(err))
+
+        setTimeout(req_keep_alive, 60000)
+    }
  
 
 
