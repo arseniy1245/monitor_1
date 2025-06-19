@@ -35,12 +35,12 @@ let NAMES = ''
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
-  bot.sendMessage(chatId, '🟢 GET req on server');
+  bot_log.sendMessage(chatId, '🟢 GET req on server');
 })
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
-
+    bot_log.sendMessage(chatId, '✳️ Bot started');
     st()
     function st() {
         tlp_team_check();
@@ -63,8 +63,11 @@ app.listen(port, () => {
                 body: JSON.stringify({
                     from: this_url
                 })})
-        .catch(err => console.log(err))
-
+        .catch(err => {
+            console.log(err);
+            bot_log.sendMessage(chatId, '❌ Err to fetch keep_alive');
+        })
+        bot_log.sendMessage(chatId, '☑️ fetch keep_alive success');
         setTimeout(req_keep_alive, 60000)
     }
  
