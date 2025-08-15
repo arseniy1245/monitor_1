@@ -19,6 +19,10 @@ const token_log = '7976555095:AAHZf67DUebTusNoJu74NH1uNtkOjtwenG4'
 const bot_log = new TelegramBot(token_log, { polling: true });
 
 const chatId = 735407518;
+const TIMEOUT = 120000;
+
+
+
 
 const link_1 = 'https://tlp-ab.ru/bureau/'
 const link_2 = 'https://kleinewelt.ru/bureau/#team'
@@ -46,30 +50,27 @@ app.listen(port, () => {
         tlp_team_check();
         klwt_team_check();
         ksms_team_check();
-    setTimeout(st, 120000)
+    setTimeout(st, TIMEOUT)
     }
 
-    function keep_alive() {
-
-    }
    
-    let this_url = 'https://monitor-1-3qxl.onrender.com'
-    let keepAlive_url = 'https://keep-alive-2-t8ru.onrender.com'
+    // let this_url = 'https://monitor-1-3qxl.onrender.com'
+    // let keepAlive_url = 'https://keep-alive-2-t8ru.onrender.com'
 
-    req_keep_alive();
-    function req_keep_alive() {
-        fetch(keepAlive_url,
-            {method:'POST',headers:{"Content-Type":"application/json;charset=utf-8"},
-                body: JSON.stringify({
-                    from: this_url
-                })})
-        .catch(err => {
-            console.log(err);
-            bot_log.sendMessage(chatId, '❌ Err to fetch keep_alive');
-        })
-        bot_log.sendMessage(chatId, '☑️ fetch keep_alive success');
-        setTimeout(req_keep_alive, 60000)
-    }
+    // req_keep_alive();
+    // function req_keep_alive() {
+    //     fetch(keepAlive_url,
+    //         {method:'POST',headers:{"Content-Type":"application/json;charset=utf-8"},
+    //             body: JSON.stringify({
+    //                 from: this_url
+    //             })})
+    //     .catch(err => {
+    //         console.log(err);
+    //         bot_log.sendMessage(chatId, '❌ Err to fetch keep_alive');
+    //     })
+    //     bot_log.sendMessage(chatId, '☑️ fetch keep_alive success');
+    //     setTimeout(req_keep_alive, 60000)
+    // }
  
 
 
