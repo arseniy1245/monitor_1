@@ -9,139 +9,130 @@ const port = process.env.PORT || 3333
 const cheerio = require('cheerio');
 const fs = require('fs');
 const fetch = require('node-fetch');
-
 const TelegramBot = require('node-telegram-bot-api');
-// const { setInterval } = require('timers/promises');
+
+
+
 const token = '7713153382:AAFP7cwmLXWbbZxP2_046MzMOvmEB45vjsg'
 const bot = new TelegramBot(token, { polling: true });
 
 const token_log = '7976555095:AAHZf67DUebTusNoJu74NH1uNtkOjtwenG4'
 const bot_log = new TelegramBot(token_log, { polling: true });
 
+
 const chatId = 735407518;
+const TIMEOUT = 120000;
+
 
 const link_1 = 'https://tlp-ab.ru/bureau/'
 const link_2 = 'https://kleinewelt.ru/bureau/#team'
 const link_3 = 'https://k-s-m-s.com/office'
 
+
 let h_1 = 'Alert\n ---------------------------------------------- \ntlp_check_team\nhttps://tlp-ab.ru/bureau/\n\n';
 let h_2 = 'Alert\n ---------------------------------------------- \nklwt_team_check\nhttps://kleinewelt.ru/bureau/#team\n';
 let h_3 = 'Alert\n ---------------------------------------------- \nksms_team_check\nhttps://k-s-m-s.com/office\n\n';
 
-let NAMES = ''
-// setInterval(() => {
-//   console.log('1')
-// }, 1000);
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
   bot_log.sendMessage(chatId, '🟢 GET req on server');
 })
 
+
+function st() {
+  tlp_team_check();
+  klwt_team_check();
+  ksms_team_check();
+  setTimeout(st, TIMEOUT);
+}
+
+
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
-    bot_log.sendMessage(chatId, '✳️ Bot started');
-    st()
-    function st() {
-        tlp_team_check();
-        klwt_team_check();
-        ksms_team_check();
-    setTimeout(st, 120000)
-    }
+  console.log(`Example app listening on port ${port}`);
+  bot_log.sendMessage(chatId, '✳️ Bot started');
 
-    function keep_alive() {
+  st();
+  
+  // let this_url = 'https://monitor-1-3qxl.onrender.com'
+  // let keepAlive_url = 'https://keep-alive-2-t8ru.onrender.com'
 
-    }
-   
-    let this_url = 'https://monitor-1-3qxl.onrender.com'
-    let keepAlive_url = 'https://keep-alive-2-t8ru.onrender.com'
-
-    req_keep_alive();
-    function req_keep_alive() {
-        fetch(keepAlive_url,
-            {method:'POST',headers:{"Content-Type":"application/json;charset=utf-8"},
-                body: JSON.stringify({
-                    from: this_url
-                })})
-        .catch(err => {
-            console.log(err);
-            bot_log.sendMessage(chatId, '❌ Err to fetch keep_alive');
-        })
-        bot_log.sendMessage(chatId, '☑️ fetch keep_alive success');
-        setTimeout(req_keep_alive, 60000)
-    }
- 
-
-
-bot.on('message', (msg) => {
-  bot.sendMessage(chatId, 'Привет!');
-  bot.sendDocument(chatId, './h.html')
-});
-
-// setInterval(() => {
-//   bot.sendMessage(chatId, 'Прошло 10 секунд');
-//   console.log('1')
-// }, 1000);
-
-
-// При получении любого текста — бот отвечает "Привет!"
-
+  // req_keep_alive();
+  // function req_keep_alive() {
+  //     fetch(keepAlive_url,
+  //         {method:'POST',headers:{"Content-Type":"application/json;charset=utf-8"},
+  //             body: JSON.stringify({
+  //                 from: this_url
+  //             })})
+  //     .catch(err => {
+  //         console.log(err);
+  //         bot_log.sendMessage(chatId, '❌ Err to fetch keep_alive');
+  //     })
+  //     bot_log.sendMessage(chatId, '☑️ fetch keep_alive success');
+  //     setTimeout(req_keep_alive, 60000)
+  // }
 
 })
 
+function bot_error_notiff(err) {
+  console.log(err)
+  bot.sendMessage(chatId, JSON.stringify(err));
+}
+
 async function ksms_team_check() {
     console.log('ksms_team_check')
-    const response = await fetch(link_3);
-    let html = await response.text();
 
-    // fs.writeFileSync('h.html', html, 'utf8');
+    try {
+      const response = await fetch(link_3);
+      let html = await response.text();
 
-    const $ = cheerio.load(html);
+      const $ = cheerio.load(html);
+      const result = [];
 
-    const result = [];
+      $('.items_master .block_item').each((i, el) => {
+        const name = $(el).find('.item_name').text().trim();
 
-// Парсим `.items_master`
-$('.items_master .block_item').each((i, el) => {
-  const name = $(el).find('.item_name').text().trim();
+        const photoStyle = $(el).find('.item_photo').attr('style') || '';
+        const photoMatch = photoStyle.match(/url\((.*?)\)/);
+        const photo = photoMatch ? photoMatch[1] : null;
+        const href = $(el).attr('href') || null;
+        result.push({
+          name,
+          photo,
+          cv: href,
+          section: 'master',
+        });
+      });
 
-  const photoStyle = $(el).find('.item_photo').attr('style') || '';
-  const photoMatch = photoStyle.match(/url\((.*?)\)/);
-  const photo = photoMatch ? photoMatch[1] : null;
+      $('.items_slave .group_title').each((i, el) => {
+        const group = $(el).text().trim();
+        const $groupItems = $(el).next('.group_items');
 
-  const href = $(el).attr('href') || null;
+        $groupItems.find('.item_name').each((i, el) => {
+          const name = $(el).text().trim();
+          result.push({
+            name,
+            photo: null,
+            cv: null,
+            section: group.toLowerCase(), // Например: 'recurring collaborations with' или 'previously'
+          });
+        });
+      });
 
-  result.push({
-    name,
-    photo,
-    cv: href,
-    section: 'master',
-  });
-});
+          let prev =  JSON.parse(fs.readFileSync('ksms_names.json', 'utf8'));
+          comparePeopleLists(prev,result);
 
-// Парсим `.items_slave`
-$('.items_slave .group_title').each((i, el) => {
-  const group = $(el).text().trim();
-  const $groupItems = $(el).next('.group_items');
+          fs.writeFileSync('ksms_names.json', JSON.stringify(result, null, 2), 'utf8');
+    } 
+    catch (error) {
+      bot_error_notiff(error)
+    }
+    
+    
 
-  $groupItems.find('.item_name').each((i, el) => {
-    const name = $(el).text().trim();
-    result.push({
-      name,
-      photo: null,
-      cv: null,
-      section: group.toLowerCase(), // Например: 'recurring collaborations with' или 'previously'
-    });
-  });
-});
-
-    let prev =  JSON.parse(fs.readFileSync('ksms_names.json', 'utf8'));
-    comparePeopleLists(prev,result);
-
-    fs.writeFileSync('ksms_names.json', JSON.stringify(result, null, 2), 'utf8');
-// console.log(result);
-
-    //  bot.sendMessage(chatId, h_3+'ksms_team:\n' + JSON.stringify(result, null, 2));
 }
+
+
 
 function comparePeopleLists(oldList, newList) {
   const normalize = (list) =>
@@ -237,35 +228,42 @@ function comparePeopleLists(oldList, newList) {
 
 async function klwt_team_check() {
     console.log('klwt_team_check')
-    const response = await fetch(link_2);
-    let html = await response.text();
+
+    try {
+      const response = await fetch(link_2);
+      let html = await response.text();
 
 
-    const $ = cheerio.load(html);
+      const $ = cheerio.load(html);
 
-    const people = [];
-    $('ul.bureau-page__team li').each((i, el) => {
-    const name = $(el).find('span').text().trim();
+      const people = [];
+      $('ul.bureau-page__team li').each((i, el) => {
+      const name = $(el).find('span').text().trim();
 
-    const position = $(el)
-        .find('.bureau-page__team-position')
-        .text()
-        .trim();
+      const position = $(el)
+          .find('.bureau-page__team-position')
+          .text()
+          .trim();
 
-    const img = $(el).find('img').attr('src') || null;
+      const img = $(el).find('img').attr('src') || null;
 
-    people.push({
-        name,
-        position,
-        img,
-    });
-    });
+      people.push({
+          name,
+          position,
+          img,
+      });
+      });
 
-    let prev = JSON.parse(fs.readFileSync('klwt_names.json', 'utf8'));
-    printPeopleChanges(prev, people)
+      let prev = JSON.parse(fs.readFileSync('klwt_names.json', 'utf8'));
+      printPeopleChanges(prev, people)
 
-    fs.writeFileSync('klwt_names.json', JSON.stringify(people, null, 2), 'utf8');
-    // bot.sendMessage(chatId, h_2+'kwlt_team:\n' + JSON.stringify(people, null, 2));
+      fs.writeFileSync('klwt_names.json', JSON.stringify(people, null, 2), 'utf8');
+      // bot.sendMessage(chatId, h_2+'kwlt_team:\n' + JSON.stringify(people, null, 2));
+    }
+    catch (error) {
+      bot_error_notiff(error)
+    }
+
 }
 
 function printPeopleChanges(oldList, newList) {
@@ -353,23 +351,28 @@ function printPeopleChanges(oldList, newList) {
 
 async function tlp_team_check() {
     console.log('tlp_team_check')
-    const response = await fetch(link_1);
-    let html = await response.text();
 
-    const $ = cheerio.load(html);
+    try {
+      const response = await fetch(link_1);
+      let html = await response.text();
 
-    let t = $('.person-grid').text()
-    const names = t
-    .split('\n')             
-    .map(line => line.trim())
-    .filter(Boolean);    
+      const $ = cheerio.load(html);
 
-    let prev = JSON.parse(fs.readFileSync('tlp_names.json', 'utf8'));
+      let t = $('.person-grid').text()
+      const names = t
+      .split('\n')             
+      .map(line => line.trim())
+      .filter(Boolean);    
 
-    NAMES = names
-    console.log(checkForNameChanges(prev, names))
+      let prev = JSON.parse(fs.readFileSync('tlp_names.json', 'utf8'));
 
-    fs.writeFileSync('tlp_names.json', JSON.stringify(names, null, 2), 'utf8');
+      console.log(checkForNameChanges(prev, names))
+
+      fs.writeFileSync('tlp_names.json', JSON.stringify(names, null, 2), 'utf8');
+    }
+    catch (error) {
+      bot_error_notiff(error)
+    }
 }
 
 
